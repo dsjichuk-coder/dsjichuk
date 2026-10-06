@@ -1,0 +1,159 @@
+<%- include('../partials/header', { title: material.title }) %>
+<div class="page-head">
+  <div>
+    <h1><%= material.title %> <span class="badge <%= material.status %>" style="vertical-align:middle"><%= STATUS_LABELS[material.status] %></span></h1>
+    <p class="subtitle"><%= material.original_name %> · 등록 <%= fmtDate(material.created_at) %><%= material.description ? ' · ' + material.description : '' %></p>
+  </div>
+  <div class="actions">
+    <a class="btn secondary" href="/admin/materials/<%= material.id %>/pdf" target="_blank" rel="noopener">원본 PDF</a>
+    <a class="btn secondary" href="/admin/materials">← 목록</a>
+  </div>
+</div>
+
+<% if (material.status === 'processing') { %>
+  <div class="alert info">⏳ AI가 PDF를 읽고 학습 노트와 문제·해설을 만들고 있습니다. 자료 분량에 따라 수 분이 걸릴 수 있으며, 완료되면 이 페이지가 자동으로 새로고침됩니다.</div>
+  <script>
+    setInterval(async () => {
+      try {
+        const r = await fetch('/admin/materials/<%= material.id %>/status');
+        const { status } = await r.json();
+        if (status !== 'processing') location.reload();
+      } catch {}
+    }, 5000);
+  </script>
+<% } else if (material.status === 'failed') { %>
+  <div class="alert bad">생성에 실패했습니다: <%= material.error %><br>아래 [AI로 다시 생성]을 누르거나, 학습 노트와 문항을 직접 작성할 수 있습니다.</div>
+<% } else if (material.status === 'draft') { %>
+  <div class="alert warn">문항을 1개 이상 추가하면 학생에게 발송할 수 있습니다.</div>
+<% } %>
+
+<div class="card">
+  <h2>발송 현황 · 풀이 결과 (<%= assignments.length %>명)</h2>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>학생</th><th>발송일</th><th>마감</th><th>상태</th><th class="num">최근 점수</th><th class="num">최고 점수</th><th>풀이 기록</th><th></th></tr></thead>
+    <tbody>
+    <% if (!assignments.length) { %><tr><td colspan="8" class="empty">아직 발송하지 않았습니다.</td></tr><% } %>
+    <% assignments.forEach((a) => { const p = progressLabel(a); %>
+      <tr>
+        <td><a href="/admin/students/<%= a.student_id %>"><b><%= a.student_name %></b></a></td>
+        <td><%= fmtDate(a.assigned_at) %></td>
+        <td><%= a.due_date || '-' %></td>
+        <td><span class="badge <%= p.key %>"><%= p.text %></span></td>
+        <td class="num"><%= a.attempt_count ? `${a.last_score}/${a.last_total} (${percent(a.last_score, a.last_total)}점)` : '-' %></td>
+        <td class="num"><%= a.best_ratio === null ? '-' : Math.round(a.best_ratio * 100) + '점' %></td>
+        <td><% if (a.attempt_count) { %><a class="btn small secondary" href="/admin/attempts/<%= a.last_attempt_id %>">최근 풀이 (총 <%= a.attempt_count %>회)</a><% } else { %><span class="muted">-</span><% } %></td>
+        <td class="right">
+          <form class="inline" method="post" action="/admin/assignments/<%= a.id %>/delete" data-confirm="발송을 취소하면 풀이 기록도 함께 삭제됩니다. 계속할까요?">
+            <button class="btn small danger">발송 취소</button>
+          </form>
+        </td>
+      </tr>
+    <% }) %>
+    </tbody>
+  </table>
+  </div>
+
+  <% if (material.status === 'ready') { %>
+    <h3 class="mt">학생에게 발송</h3>
+    <% if (!students.length) { %>
+      <p class="muted">발송할 학생이 없습니다. <a href="/admin/students">학생 관리</a>에서 학생을 추가하세요.</p>
+    <% } else { %>
+      <form method="post" action="/admin/materials/<%= material.id %>/assign">
+        <div class="field">
+          <label><input type="checkbox" id="check-all"> 전체 선택</label>
+          <div class="checklist">
+            <% students.forEach((s) => { %>
+              <label><input type="checkbox" name="student_ids" value="<%= s.id %>"> <%= s.name %> <span class="muted small"><%= s.username %></span></label>
+            <% }) %>
+          </div>
+        </div>
+        <div class="row">
+          <div class="field" style="flex:0 0 200px"><label>마감일 <span class="hint">(선택)</span></label><input type="date" name="due_date"></div>
+          <div class="field"><label>메시지 <span class="hint">(선택)</span></label><input type="text" name="message" placeholder="예: 금요일까지 학습하고 문제를 풀어 주세요."></div>
+        </div>
+        <button class="btn">선택한 학생에게 발송</button>
+      </form>
+      <script>
+        document.getElementById('check-all').addEventListener('change', (e) => {
+          document.querySelectorAll('input[name=student_ids]').forEach((c) => { c.checked = e.target.checked; });
+        });
+      </script>
+    <% } %>
+  <% } %>
+</div>
+
+<div class="card" id="questions">
+  <div class="page-head" style="margin-bottom:12px">
+    <h2 style="margin:0">문항 (<%= questions.length %>)</h2>
+    <span class="hint">문항을 수정해도 이미 제출된 풀이 결과는 바뀌지 않습니다.</span>
+  </div>
+  <% questions.forEach((q, i) => { %>
+    <details class="qedit">
+      <summary>
+        <b><%= i + 1 %>.</b>
+        <div class="qsummary">
+          <div><span class="badge"><%= q.type === 'mcq' ? '객관식' : '단답형' %></span> <%= q.prompt %></div>
+          <div class="ans">정답: <%= q.answerText %></div>
+        </div>
+      </summary>
+      <div class="body">
+        <%- include('question_form', { action: `/admin/materials/${material.id}/questions/${q.id}`, q, submitLabel: '저장' }) %>
+        <form method="post" action="/admin/materials/<%= material.id %>/questions/<%= q.id %>/delete" data-confirm="이 문항을 삭제할까요?" class="mt">
+          <button class="btn small danger">문항 삭제</button>
+        </form>
+      </div>
+    </details>
+  <% }) %>
+  <details class="qedit" <%= questions.length ? '' : 'open' %>>
+    <summary><b>+ 문항 추가</b></summary>
+    <div class="body">
+      <%- include('question_form', { action: `/admin/materials/${material.id}/questions`, q: null, submitLabel: '추가' }) %>
+    </div>
+  </details>
+</div>
+
+<div class="card">
+  <h2>학습 노트 <span class="hint">(학생 학습 화면에 표시)</span></h2>
+  <%- include('../partials/notes', { notes: material.notes }) %>
+  <details class="qedit mt">
+    <summary><b>학습 노트 편집</b></summary>
+    <div class="body">
+      <form method="post" action="/admin/materials/<%= material.id %>/notes">
+        <div class="field"><label>요약</label><textarea name="summary" rows="4"><%= notesForm.summary %></textarea></div>
+        <div class="field"><label>핵심 개념 <span class="hint">(한 줄에 하나, "용어: 설명" 형식)</span></label><textarea name="key_concepts" rows="6"><%= notesForm.key_concepts %></textarea></div>
+        <div class="field"><label>본문 섹션 <span class="hint">("## 제목" 줄로 섹션을 나눕니다)</span></label><textarea name="sections" rows="16"><%= notesForm.sections %></textarea></div>
+        <button class="btn">노트 저장</button>
+      </form>
+    </div>
+  </details>
+</div>
+
+<div class="grid grid-2">
+  <div class="card">
+    <h2>자료 정보</h2>
+    <form method="post" action="/admin/materials/<%= material.id %>/info">
+      <div class="field"><label>제목</label><input type="text" name="title" value="<%= material.title %>" required></div>
+      <div class="field"><label>설명</label><input type="text" name="description" value="<%= material.description %>"></div>
+      <button class="btn secondary">저장</button>
+    </form>
+  </div>
+  <div class="card">
+    <h2>AI로 다시 생성</h2>
+    <% if (!aiEnabled) { %>
+      <p class="muted">ANTHROPIC_API_KEY 를 설정하면 PDF에서 학습 노트와 문항을 자동 생성할 수 있습니다.</p>
+    <% } else { %>
+      <form method="post" action="/admin/materials/<%= material.id %>/regenerate" data-confirm="기존 학습 노트와 문항이 새로 생성된 내용으로 교체됩니다. 계속할까요?">
+        <div class="row">
+          <div class="field" style="flex:0 0 110px"><label>문항 수</label><input type="number" name="question_count" value="<%= questions.length || 10 %>" min="1" max="30"></div>
+          <div class="field"><label>요청사항</label><input type="text" name="instructions" placeholder="예: 계산 문제 위주로"></div>
+        </div>
+        <button class="btn secondary" <%= material.status === 'processing' ? 'disabled' : '' %>>다시 생성</button>
+      </form>
+    <% } %>
+    <form method="post" action="/admin/materials/<%= material.id %>/delete" data-confirm="학습자료와 모든 발송·풀이 기록이 삭제됩니다. 계속할까요?" class="mt">
+      <button class="btn danger">학습자료 삭제</button>
+    </form>
+  </div>
+</div>
+<%- include('../partials/footer') %>

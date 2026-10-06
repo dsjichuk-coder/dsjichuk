@@ -1,0 +1,38 @@
+<%- include('../partials/header', { title: '관리자 대시보드' }) %>
+<div class="page-head">
+  <div><h1>대시보드</h1><p class="subtitle">학습자료 발송 현황과 최근 풀이 결과입니다.</p></div>
+  <div class="actions">
+    <a class="btn" href="/admin/materials">+ 학습자료 올리기</a>
+    <a class="btn secondary" href="/admin/students">학생 관리</a>
+  </div>
+</div>
+<% if (!aiEnabled) { %>
+  <div class="alert warn">ANTHROPIC_API_KEY 가 설정되지 않아 AI 자동 생성이 꺼져 있습니다. 학습 노트와 문항을 직접 작성할 수 있습니다.</div>
+<% } %>
+<div class="stats">
+  <div class="stat"><div class="label">학생</div><div class="value"><%= stats.students %>명</div></div>
+  <div class="stat"><div class="label">학습자료</div><div class="value"><%= stats.materials %>건</div></div>
+  <div class="stat"><div class="label">발송</div><div class="value"><%= stats.assignments %>건</div></div>
+  <div class="stat"><div class="label">풀이 완료</div><div class="value"><%= stats.completed %>건</div></div>
+</div>
+<div class="card">
+  <h2>최근 제출</h2>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>제출 시각</th><th>학생</th><th>학습자료</th><th class="num">점수</th><th></th></tr></thead>
+    <tbody>
+    <% if (!recent.length) { %><tr><td colspan="5" class="empty">아직 제출된 풀이가 없습니다.</td></tr><% } %>
+    <% recent.forEach((r) => { %>
+      <tr>
+        <td><%= fmtDate(r.submitted_at) %></td>
+        <td><a href="/admin/students/<%= r.student_id %>"><%= r.student_name %></a></td>
+        <td><%= r.material_title %></td>
+        <td class="num"><%= r.score %>/<%= r.total %> (<%= percent(r.score, r.total) %>점)</td>
+        <td class="right"><a class="btn small secondary" href="/admin/attempts/<%= r.id %>">상세</a></td>
+      </tr>
+    <% }) %>
+    </tbody>
+  </table>
+  </div>
+</div>
+<%- include('../partials/footer') %>

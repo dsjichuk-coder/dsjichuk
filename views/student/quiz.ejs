@@ -1,0 +1,54 @@
+<%- include('../partials/header', { title: material.title + ' 문제 풀기' }) %>
+<div class="page-head">
+  <div><h1><%= material.title %></h1><p class="subtitle">모든 문제를 풀고 [제출하고 채점하기]를 누르세요.</p></div>
+  <div class="actions"><a class="btn secondary" href="/student/assignments/<%= assignment.id %>">← 학습으로 돌아가기</a></div>
+</div>
+<% if (!questions.length) { %>
+  <div class="card empty">아직 준비된 문제가 없습니다.</div>
+<% } else { %>
+<form method="post" action="/student/assignments/<%= assignment.id %>/quiz" id="quiz">
+  <div class="quiz-progress">
+    <span class="small"><b id="answered">0</b> / <%= questions.length %> 문항 응답</span>
+    <div class="bar"><i id="progress" style="width:0"></i></div>
+  </div>
+  <% questions.forEach((q, i) => { %>
+    <div class="question" data-q>
+      <div class="qhead"><span class="qno"><%= i + 1 %>.</span><span class="qtext"><%= q.prompt %></span></div>
+      <% if (q.type === 'mcq') { %>
+        <% q.choices.forEach((c, ci) => { %>
+          <label class="choice"><input type="radio" name="q_<%= q.id %>" value="<%= ci %>"> <span><%= ci + 1 %>. <%= c %></span></label>
+        <% }) %>
+      <% } else { %>
+        <input type="text" name="q_<%= q.id %>" placeholder="답을 입력하세요" autocomplete="off">
+      <% } %>
+    </div>
+  <% }) %>
+  <div class="actions" style="justify-content:flex-end">
+    <button class="btn large">제출하고 채점하기</button>
+  </div>
+</form>
+<script>
+  (() => {
+    const form = document.getElementById('quiz');
+    const blocks = [...form.querySelectorAll('[data-q]')];
+    const update = () => {
+      const n = blocks.filter((b) => [...b.querySelectorAll('input')].some((i) => (i.type === 'radio' ? i.checked : i.value.trim()))).length;
+      document.getElementById('answered').textContent = n;
+      document.getElementById('progress').style.width = `${(n / blocks.length) * 100}%`;
+      return n;
+    };
+    form.addEventListener('input', update);
+    form.addEventListener('change', update);
+    // 단답형에서 Enter 로 실수 제출 방지
+    form.addEventListener('keydown', (e) => { if (e.key === 'Enter' && e.target.type === 'text') e.preventDefault(); });
+    let submitting = false;
+    form.addEventListener('submit', (e) => {
+      const left = blocks.length - update();
+      if (left > 0 && !confirm(`아직 풀지 않은 문제가 ${left}개 있습니다. 그래도 제출할까요?`)) { e.preventDefault(); return; }
+      submitting = true;
+    });
+    window.addEventListener('beforeunload', (e) => { if (!submitting && update() > 0) e.preventDefault(); });
+  })();
+</script>
+<% } %>
+<%- include('../partials/footer') %>

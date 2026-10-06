@@ -1,0 +1,72 @@
+<%- include('../partials/header', { title: student.name }) %>
+<div class="page-head">
+  <div><h1><%= student.name %></h1><p class="subtitle">아이디 <%= student.username %> · 가입 <%= fmtDate(student.created_at) %></p></div>
+  <div class="actions"><a class="btn secondary" href="/admin/students">← 학생 목록</a></div>
+</div>
+
+<div class="card">
+  <h2>발송된 학습자료와 풀이 결과</h2>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>학습자료</th><th>발송일</th><th>마감</th><th>상태</th><th class="num">최근 점수</th><th class="num">최고 점수</th><th>풀이 기록</th><th></th></tr></thead>
+    <tbody>
+    <% if (!assignments.length) { %><tr><td colspan="8" class="empty">발송된 학습자료가 없습니다.</td></tr><% } %>
+    <% assignments.forEach((a) => { const p = progressLabel(a); %>
+      <tr>
+        <td><a href="/admin/materials/<%= a.material_id %>"><b><%= a.material_title %></b></a></td>
+        <td><%= fmtDate(a.assigned_at) %></td>
+        <td><%= a.due_date || '-' %></td>
+        <td><span class="badge <%= p.key %>"><%= p.text %></span></td>
+        <td class="num"><%= a.attempt_count ? `${a.last_score}/${a.last_total} (${percent(a.last_score, a.last_total)}점)` : '-' %></td>
+        <td class="num"><%= a.best_ratio === null ? '-' : Math.round(a.best_ratio * 100) + '점' %></td>
+        <td>
+          <% if (!a.attempts.length) { %><span class="muted">-</span><% } %>
+          <% a.attempts.forEach((t, i) => { %>
+            <a class="btn small secondary" href="/admin/attempts/<%= t.id %>" title="<%= fmtDate(t.submitted_at) %>"><%= a.attempts.length - i %>회차 <%= percent(t.score, t.total) %>점</a>
+          <% }) %>
+        </td>
+        <td class="right">
+          <form class="inline" method="post" action="/admin/assignments/<%= a.id %>/delete" data-confirm="발송을 취소하면 풀이 기록도 함께 삭제됩니다. 계속할까요?">
+            <input type="hidden" name="return_to" value="student">
+            <button class="btn small danger">발송 취소</button>
+          </form>
+        </td>
+      </tr>
+    <% }) %>
+    </tbody>
+  </table>
+  </div>
+</div>
+
+<div class="grid grid-2">
+  <div class="card">
+    <h2>학습자료 발송</h2>
+    <% if (!materials.length) { %>
+      <p class="muted">발송할 수 있는 학습자료가 없습니다.</p>
+    <% } else { %>
+      <form method="post" action="/admin/students/<%= student.id %>/assign">
+        <div class="field"><label>학습자료</label>
+          <select name="material_id" required>
+            <% materials.forEach((m) => { %><option value="<%= m.id %>"><%= m.title %></option><% }) %>
+          </select>
+        </div>
+        <div class="row">
+          <div class="field"><label>마감일 <span class="hint">(선택)</span></label><input type="date" name="due_date"></div>
+        </div>
+        <div class="field"><label>학생에게 남길 메시지 <span class="hint">(선택)</span></label><input type="text" name="message"></div>
+        <button class="btn">발송</button>
+      </form>
+    <% } %>
+  </div>
+  <div class="card">
+    <h2>계정 관리</h2>
+    <form method="post" action="/admin/students/<%= student.id %>/password" class="field">
+      <label>비밀번호 초기화</label>
+      <div class="actions"><input type="text" name="password" placeholder="새 비밀번호 (6자 이상)" minlength="6" required style="flex:1"><button class="btn secondary">변경</button></div>
+    </form>
+    <form method="post" action="/admin/students/<%= student.id %>/delete" data-confirm="학생과 모든 풀이 기록이 삭제됩니다. 계속할까요?">
+      <button class="btn danger">학생 삭제</button>
+    </form>
+  </div>
+</div>
+<%- include('../partials/footer') %>

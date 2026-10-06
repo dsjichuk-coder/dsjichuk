@@ -1,0 +1,44 @@
+<%# 문항별 채점 결과 + 해설: attempt.answers %>
+<div class="filter" data-filter>
+  <button type="button" class="btn small secondary" data-show="all">전체 (<%= attempt.answers.length %>)</button>
+  <button type="button" class="btn small secondary" data-show="incorrect">틀린 문제 (<%= attempt.answers.filter(a => !a.isCorrect).length %>)</button>
+  <button type="button" class="btn small secondary" data-show="correct">맞힌 문제 (<%= attempt.answers.filter(a => a.isCorrect).length %>)</button>
+</div>
+<% attempt.answers.forEach((a) => { const q = a.question; %>
+  <div class="question <%= a.isCorrect ? 'correct' : 'incorrect' %>" data-result="<%= a.isCorrect ? 'correct' : 'incorrect' %>">
+    <div class="qhead">
+      <span class="qno"><%= a.position %>.</span>
+      <span class="qtext"><%= q.prompt %></span>
+      <span class="badge <%= a.isCorrect ? 'ok' : 'bad' %>" style="margin-left:auto"><%= a.isCorrect ? '정답' : '오답' %></span>
+    </div>
+    <% if (q.type === 'mcq') { %>
+      <% q.choices.forEach((c, i) => {
+           const isAnswer = i === Number(q.answer);
+           const isPicked = a.response !== '' && i === Number(a.response); %>
+        <div class="choice static <%= isAnswer ? 'is-answer' : (isPicked ? 'is-wrong' : '') %>">
+          <span><%= i + 1 %>.</span>
+          <span style="flex:1"><%= c %></span>
+          <% if (isPicked) { %><span class="badge <%= isAnswer ? 'ok' : 'bad' %>">내 선택</span><% } %>
+          <% if (isAnswer) { %><span class="badge ok">정답</span><% } %>
+        </div>
+      <% }) %>
+      <% if (a.response === '') { %><p class="answer-line muted">미응답</p><% } %>
+    <% } else { %>
+      <p class="answer-line">작성한 답: <b class="<%= a.isCorrect ? '' : 'muted' %>"><%= a.responseText %></b></p>
+      <p class="answer-line">정답: <b><%= a.answerText %></b></p>
+    <% } %>
+    <% if (q.explanation) { %>
+      <div class="explanation"><b>해설</b><%= q.explanation %></div>
+    <% } %>
+  </div>
+<% }) %>
+<script>
+  document.querySelectorAll('[data-filter] button').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const show = btn.dataset.show;
+      document.querySelectorAll('[data-result]').forEach((el) => {
+        el.hidden = show !== 'all' && el.dataset.result !== show;
+      });
+    });
+  });
+</script>

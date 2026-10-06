@@ -1,0 +1,28 @@
+<%- include('../partials/header', { title: '채점 결과' }) %>
+<% const p = percent(attempt.score, attempt.total); %>
+<div class="page-head">
+  <div><h1>채점 결과</h1><p class="subtitle"><%= attempt.material_title %> · 제출 <%= fmtDate(attempt.submitted_at) %></p></div>
+  <div class="actions">
+    <a class="btn secondary" href="/student/assignments/<%= attempt.assignment_id %>">학습 노트 다시 보기</a>
+    <a class="btn" href="/student/assignments/<%= attempt.assignment_id %>/quiz">다시 풀기</a>
+  </div>
+</div>
+<div class="card">
+  <div class="score-hero">
+    <div class="score-ring" style="--p: <%= p %>"><span><%= p %>점</span></div>
+    <div>
+      <h2><%= attempt.total %>문항 중 <%= attempt.score %>문항을 맞혔어요<%= p === 100 ? ' 🎉' : '' %></h2>
+      <p class="muted"><%= p === 100 ? '완벽해요! 모든 문제를 맞혔습니다.' : p >= 70 ? '잘했어요! 틀린 문제의 해설을 확인해 보세요.' : '해설을 읽고 학습 노트를 복습한 뒤 다시 풀어 보세요.' %></p>
+      <% if (history.length > 1) { %>
+        <div class="actions small">
+          <% history.forEach((t, i) => { %>
+            <a class="btn small <%= t.id === attempt.id ? '' : 'secondary' %>" href="/student/attempts/<%= t.id %>"><%= history.length - i %>회차 · <%= percent(t.score, t.total) %>점</a>
+          <% }) %>
+        </div>
+      <% } %>
+    </div>
+  </div>
+</div>
+<h2>문항별 결과와 해설</h2>
+<%- include('../partials/answers', { attempt }) %>
+<%- include('../partials/footer') %>

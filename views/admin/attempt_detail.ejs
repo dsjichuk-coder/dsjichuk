@@ -1,0 +1,27 @@
+<%- include('../partials/header', { title: '풀이 결과' }) %>
+<div class="page-head">
+  <div>
+    <h1><%= attempt.student_name %> · <%= attempt.material_title %></h1>
+    <p class="subtitle">제출 <%= fmtDate(attempt.submitted_at) %></p>
+  </div>
+  <div class="actions">
+    <a class="btn secondary" href="/admin/students/<%= attempt.student_id %>">학생 상세</a>
+    <a class="btn secondary" href="/admin/materials/<%= attempt.material_id %>">자료 상세</a>
+  </div>
+</div>
+<div class="card">
+  <div class="score-hero">
+    <div class="score-ring" style="--p: <%= percent(attempt.score, attempt.total) %>"><span><%= percent(attempt.score, attempt.total) %>점</span></div>
+    <div>
+      <h2><%= attempt.total %>문항 중 <%= attempt.score %>문항 정답</h2>
+      <p class="muted">이 학생의 풀이 기록:</p>
+      <div class="actions">
+        <% history.forEach((t, i) => { %>
+          <a class="btn small <%= t.id === attempt.id ? '' : 'secondary' %>" href="/admin/attempts/<%= t.id %>"><%= history.length - i %>회차 · <%= percent(t.score, t.total) %>점</a>
+        <% }) %>
+      </div>
+    </div>
+  </div>
+</div>
+<%- include('../partials/answers', { attempt }) %>
+<%- include('../partials/footer') %>
