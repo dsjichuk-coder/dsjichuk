@@ -1,0 +1,32 @@
+<%- include('../partials/header', { title: '내 학습' }) %>
+<div class="page-head"><div><h1>안녕하세요, <%= user.name %>님 👋</h1><p class="subtitle">받은 학습자료로 공부하고 문제를 풀어 보세요.</p></div></div>
+<% if (!assignments.length) { %>
+  <div class="card empty">아직 받은 학습자료가 없습니다.</div>
+<% } %>
+<div class="grid grid-2">
+<% assignments.forEach((a) => { const p = progressLabel(a); %>
+  <div class="card" style="margin:0">
+    <div class="actions" style="justify-content:space-between; margin-bottom:8px">
+      <span class="badge <%= p.key %>"><%= p.text %></span>
+      <span class="muted small">받은 날 <%= fmtDate(a.assigned_at) %></span>
+    </div>
+    <h2><%= a.material_title %></h2>
+    <% if (a.message) { %><p class="small">💬 <%= a.message %></p><% } %>
+    <% if (a.due_date) { %><p class="small muted">마감: <%= a.due_date %></p><% } %>
+    <% if (a.attempt_count) { %>
+      <div class="actions small" style="margin-bottom:12px">
+        <span>최근 점수 <b><%= percent(a.last_score, a.last_total) %>점</b> (<%= a.last_score %>/<%= a.last_total %>)</span>
+        <span class="muted">· <%= a.attempt_count %>회 풀이</span>
+      </div>
+    <% } %>
+    <div class="actions">
+      <a class="btn" href="/student/assignments/<%= a.id %>">학습하기</a>
+      <% if (a.material_status === 'ready') { %>
+        <a class="btn secondary" href="/student/assignments/<%= a.id %>/quiz"><%= a.attempt_count ? '다시 풀기' : '문제 풀기' %></a>
+      <% } %>
+      <% if (a.last_attempt_id) { %><a class="btn secondary" href="/student/attempts/<%= a.last_attempt_id %>">결과·해설</a><% } %>
+    </div>
+  </div>
+<% }) %>
+</div>
+<%- include('../partials/footer') %>

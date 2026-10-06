@@ -1,0 +1,24 @@
+<%# 학습 노트 렌더링: notes = { summary, key_concepts[], sections[] } %>
+<div class="notes">
+  <% if (!notes.summary && !notes.key_concepts.length && !notes.sections.length) { %>
+    <p class="muted">아직 작성된 학습 노트가 없습니다. 원문 PDF로 학습해 주세요.</p>
+  <% } %>
+  <% if (notes.summary) { %>
+    <h3>요약</h3>
+    <div class="summary"><%= notes.summary %></div>
+  <% } %>
+  <% if (notes.key_concepts.length) { %>
+    <h3>핵심 개념</h3>
+    <div class="concepts">
+      <% notes.key_concepts.forEach((c) => { %>
+        <div class="concept"><b><%= c.term %></b><span class="muted"><%= c.explanation %></span></div>
+      <% }) %>
+    </div>
+  <% } %>
+  <% notes.sections.forEach((s) => { %>
+    <div class="section">
+      <% if (s.heading) { %><h3><%= s.heading %></h3><% } %>
+      <div class="content"><%= s.content %></div>
+    </div>
+  <% }) %>
+</div>

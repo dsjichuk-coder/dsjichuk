@@ -1,0 +1,31 @@
+<%# 문항 작성/수정 폼. q 가 null 이면 새 문항 %>
+<% const isShort = q && q.type === 'short'; %>
+<form method="post" action="<%= action %>" data-qform>
+  <div class="row">
+    <div class="field" style="flex:0 0 160px"><label>유형</label>
+      <select name="type" data-qtype>
+        <option value="mcq" <%= !isShort ? 'selected' : '' %>>객관식</option>
+        <option value="short" <%= isShort ? 'selected' : '' %>>단답형</option>
+      </select>
+    </div>
+  </div>
+  <div class="field"><label>문제</label><textarea name="prompt" rows="3" required><%= q ? q.prompt : '' %></textarea></div>
+  <div class="field" data-mcq-only <%= isShort ? 'hidden' : '' %>><label>보기 <span class="hint">(한 줄에 하나)</span></label>
+    <textarea name="choices" rows="5"><%= q && q.type === 'mcq' ? q.choices.join('\n') : '' %></textarea></div>
+  <div class="field"><label>정답 <span class="hint" data-answer-hint><%= isShort ? '(허용 정답, 여러 개는 | 로 구분)' : '(정답 보기 번호, 1부터)' %></span></label>
+    <input type="text" name="answer" required value="<%= q ? (q.type === 'mcq' ? Number(q.answer) + 1 : q.answer.join(' | ')) : '' %>"></div>
+  <div class="field"><label>해설</label><textarea name="explanation" rows="4"><%= q ? q.explanation : '' %></textarea></div>
+  <button class="btn"><%= submitLabel %></button>
+</form>
+<script>
+  (() => {
+    const form = document.currentScript.previousElementSibling;
+    const sel = form.querySelector('[data-qtype]');
+    const sync = () => {
+      const short = sel.value === 'short';
+      form.querySelector('[data-mcq-only]').hidden = short;
+      form.querySelector('[data-answer-hint]').textContent = short ? '(허용 정답, 여러 개는 | 로 구분)' : '(정답 보기 번호, 1부터)';
+    };
+    sel.addEventListener('change', sync);
+  })();
+</script>

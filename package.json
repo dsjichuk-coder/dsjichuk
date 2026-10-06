@@ -1,0 +1,21 @@
+{
+  "name": "pdf-study-platform",
+  "version": "1.0.0",
+  "description": "PDF 학습자료 기반 학습·문제풀이·채점 플랫폼",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node --disable-warning=ExperimentalWarning src/server.js",
+    "dev": "node --disable-warning=ExperimentalWarning --watch src/server.js",
+    "test": "node --disable-warning=ExperimentalWarning --test \"test/**/*.test.js\""
+  },
+  "engines": {
+    "node": ">=22.13"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.131.0",
+    "ejs": "^7.0.1",
+    "express": "^5.2.1",
+    "multer": "^2.4.0"
+  }
+}

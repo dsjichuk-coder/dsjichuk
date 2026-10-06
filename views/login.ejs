@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>로그인 · 스터디 PDF</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="login-wrap">
+  <div class="card login-card">
+    <h1>📘 스터디 PDF</h1>
+    <p class="subtitle" style="margin-bottom:20px">학습자료로 공부하고, 문제를 풀고, 해설까지 확인하세요.</p>
+    <% if (error) { %><div class="alert bad"><%= error %></div><% } %>
+    <form method="post" action="/login">
+      <div class="field">
+        <label for="username">아이디</label>
+        <input type="text" id="username" name="username" value="<%= username %>" autocomplete="username" required autofocus>
+      </div>
+      <div class="field">
+        <label for="password">비밀번호</label>
+        <input type="password" id="password" name="password" autocomplete="current-password" required>
+      </div>
+      <button class="btn large" style="width:100%">로그인</button>
+    </form>
+  </div>
+</div>
+</body>
+</html>
